@@ -1,141 +1,224 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { QuestionnaireAnswers, QuestionDefinition } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { QuestionCard } from "./QuestionCard";
+import ClientOnlyQuestionCard from "./ClientOnlyQuestionCard";
 import { recommendService } from "@/ai/flows/service-recommendation";
 import type { ServiceRecommendationOutput } from "@/ai/flows/service-recommendation";
-import { Loader2, ArrowLeft, ArrowRight, Send } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { services, getServiceById } from "@/config/services"; // Import services data
+import Lottie from "lottie-react";
+import { WistiaPlayer } from "@/components/common/WistiaPlayer";
+import { motion } from "framer-motion"; // motion is already imported
+
+const MIN_CHARS_PER_QUESTION = 20;
+const MAX_CHARS_PER_QUESTION = 1000;
+const LOCAL_STORAGE_KEY = "questionnaireAnswers";
+const DEBOUNCE_DELAY = 500; // ms
 
 const questions: QuestionDefinition[] = [
   {
     id: "mindClarification",
     label: "Let’s get you clarity.",
     prompt: "What’s on your mind that could use clarity?",
-    placeholder: "e.g., Scaling my business, improving team productivity, launching a new product...",
-    supportingText: "This maps priorities. It helps us guide you better.",
+    placeholder: "e.g., I'm struggling with defining my target audience and reaching them effectively.",
+    tipText: "Be specific. The more detailed you are, the better we can assist you.",
+    wistiaVideoId: "9jc0yq6vre",
   },
   {
     id: "situationContext",
     label: "Context creates clarity.",
     prompt: "What’s the situation around this issue?",
-    placeholder: "e.g., Rapid growth phase, recent market changes, internal team restructuring...",
-    supportingText: "Knowing what surrounds the issue sharpens what matters. We don’t need fluff. Only what helps.",
+    placeholder: "e.g., We're a startup in the SaaS space, launched 6 months ago, facing slow user adoption.",
+    tipText: "Consider relevant background, recent changes, or contributing factors.",
+    wistiaVideoId: "5qgx9ki87v",
   },
   {
     id: "issueOrigin",
     label: "The root reveals the answer.",
     prompt: "What do you think is really causing this issue?",
-    placeholder: "e.g., Lack of clear processes, insufficient resources, communication breakdown...",
-    supportingText: "Understanding the origin of the issue helps guide the solution. Your clarity starts here. No judgment. Only insight.",
+    placeholder: "e.g., Perhaps our value proposition isn't clear, or we're targeting the wrong channels.",
+    tipText: "Think about underlying causes, not just symptoms. What’s your hypothesis?",
+    wistiaVideoId: "5qgx9ki87v",
   },
   {
     id: "triedSolutions",
     label: "What have you already tried?",
     prompt: "Share what you’ve done so far, even if it didn’t work.",
-    placeholder: "e.g., Hired new staff, implemented new software, changed marketing strategies...",
-    supportingText: "We don’t want to offer advice you’ve already outgrown. This is a direct action point. Don’t hold back now.",
+    placeholder: "e.g., We've tried Facebook ads, content marketing, and cold outreach with limited success.",
+    tipText: "List any strategies, tools, or approaches you've implemented and their outcomes.",
+    wistiaVideoId: "cj7xetrqsp",
   },
   {
     id: "desiredOutcome",
     label: "What does success look like?",
     prompt: "Describe the outcome you’re hoping for.",
-    placeholder: "e.g., 20% increase in revenue, improved customer satisfaction, successful product launch...",
-    supportingText: "We need a clear target. Otherwise, you’ll just circle the issue. It’s not perfection. It’s 20 yards forward.",
+    placeholder: "e.g., We want to increase user sign-ups by 50% in the next quarter and improve retention.",
+    tipText: "Be as concrete as possible. What measurable results are you aiming for?",
+    wistiaVideoId: "8coq79vf6p",
   },
   {
     id: "urgentPart",
     label: "If we had to focus on one part first…",
     prompt: "Which part feels the most urgent or impactful right now?",
-    placeholder: "e.g., Streamlining sales, improving team morale, defining brand message...",
-    supportingText: "Type the piece that matters most to start with. If it’s more than one, we’ll cover more—but we always start with focus.",
+    placeholder: "e.g., Generating more qualified leads is the most pressing issue for us.",
+    tipText: "Prioritize. What one area, if improved, would provide the greatest leverage?",
+    wistiaVideoId: "5mi0o3wya0",
   },
   {
     id: "additionalContext",
     label: "What else should we know?",
     prompt: "Is there anything else you feel is important?",
-    placeholder: "Any other details, constraints, or aspirations...",
-    supportingText: "This is your space to share any context we might’ve missed. You’ll never be ignored. Give us everything that matters in this place.",
+    placeholder: "e.g., We have a limited budget for the next 3 months, or specific competitor actions.",
+    tipText: "Include any constraints, opportunities, or other details that might be relevant.",
+    wistiaVideoId: "3inbf3ppgf",
   },
 ];
 
-const initialAnswers: QuestionnaireAnswers = {
-  mindClarification: "",
-  situationContext: "",
-  issueOrigin: "",
-  triedSolutions: "",
-  desiredOutcome: "",
-  urgentPart: "",
-  additionalContext: "",
+const initialAnswers: QuestionnaireAnswers = questions.reduce((acc, q) => ({ ...acc, [q.id]: "" }), {} as QuestionnaireAnswers);
+
+const contentAppearVariants = {
+  hidden: { opacity: 0, transition: { duration: 0.4, ease: "easeOut" } },
+  visible: { opacity: 1, transition: { duration: 0.5, ease: "easeIn", delay: 0.2 } }  
 };
+
+function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<F>): Promise<ReturnType<F>> =>
+    new Promise(resolve => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(() => resolve(func(...args)), waitFor);
+    });
+}
 
 export function QuestionnaireForm() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<QuestionnaireAnswers>(initialAnswers);
-  const [isLoading, setIsLoading] = useState(false);
-  const [recommendation, setRecommendation] = useState<ServiceRecommendationOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(false); 
+  const [recommendation, setRecommendation] = useState<ServiceRecommendationOutput | null>(null); 
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiData, setConfettiData] = useState<object | null>(null);
+  const [showTextAndCTA, setShowTextAndCTA] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleAnswerChange = (id: keyof QuestionnaireAnswers, value: string) => {
-    setAnswers((prev) => ({ ...prev, [id]: value }));
-  };
-
-  const nextStep = () => {
-    if (currentStep < questions.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    setIsLoading(true);
+  useEffect(() => {
     try {
-      const aiInput = {
-        clarity: answers.mindClarification,
-        context: answers.situationContext,
-        rootCause: answers.issueOrigin,
-        previousAttempts: answers.triedSolutions,
-        successDefinition: answers.desiredOutcome,
-        urgentPart: answers.urgentPart,
-        additionalContext: answers.additionalContext,
+      const savedAnswers = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedAnswers) {
+        const parsedAnswers = JSON.parse(savedAnswers);
+        const validAnswers = questions.reduce((acc, q) => {
+          acc[q.id] = parsedAnswers[q.id] || "";
+          return acc;
+        }, {} as QuestionnaireAnswers);
+        setAnswers(validAnswers);
+      }
+    } catch (error) {
+      console.error("Failed to load answers from localStorage:", error);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  const debouncedSaveAnswers = useCallback(
+    debounce((currentAnswers: QuestionnaireAnswers) => {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentAnswers));
+      } catch (error) {
+        console.error("Failed to save answers to localStorage:", error);
+      }
+    }, DEBOUNCE_DELAY),
+    []
+  );
+
+  useEffect(() => {
+    if (isLoaded && Object.keys(answers).length > 0 && answers !== initialAnswers) {
+      debouncedSaveAnswers(answers);
+    }
+  }, [answers, debouncedSaveAnswers, isLoaded]);
+
+  useEffect(() => {
+    fetch("/confetti.json")
+      .then((response) => response.json())
+      .then((data) => setConfettiData(data))
+      .catch((error) => console.error("Error loading confetti animation:", error));
+  }, []);
+
+  useEffect(() => {
+    if (recommendation && confettiData) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => {
+        setShowTextAndCTA(true);
+      }, 2000); 
+      return () => clearTimeout(timer);
+    } else {
+      setShowTextAndCTA(false);
+      setShowConfetti(false);
+    }
+  }, [recommendation, confettiData]);
+  
+  const currentQuestion = questions[currentStep];
+  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : "";
+  const isMinCharMet = currentAnswer.length >= MIN_CHARS_PER_QUESTION;
+  const isLastQuestion = currentStep === questions.length - 1;
+
+  const handleAnswerChange = (id: keyof QuestionnaireAnswers, value: string) => {
+    if (value.length <= MAX_CHARS_PER_QUESTION) {
+      setAnswers((prev) => ({ ...prev, [id]: value }));
+    }
+  };
+
+  const handleNextStep = () => { 
+    if (!isLastQuestion) setCurrentStep(currentStep + 1); 
+  };
+
+  const handleSubmitAnswers = async () => {
+    setIsLoading(true); 
+    setRecommendation(null); 
+    setShowConfetti(false); 
+    setShowTextAndCTA(false);
+    try {
+      const aiInput = { 
+        clarity: answers.mindClarification, 
+        context: answers.situationContext, 
+        rootCause: answers.issueOrigin, 
+        previousAttempts: answers.triedSolutions, 
+        successDefinition: answers.desiredOutcome, 
+        urgentPart: answers.urgentPart, 
+        additionalContext: answers.additionalContext, 
       };
       const result = await recommendService(aiInput);
       setRecommendation(result);
-      // Instead of navigating, we will display the recommendation on the same page.
-      // router.push(`/recommendation?service=${encodeURIComponent(result.serviceName)}&justification=${encodeURIComponent(result.justification)}`);
-    } catch (error) {
-      console.error("Error getting recommendation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to get service recommendation. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      } catch (error) {
+        console.error("Failed to remove answers from localStorage:", error);
+      }
+    } catch (error) { 
+      console.error("Error getting recommendation:", error); 
+      toast({ title: "Error", description: "Failed to get service recommendation. Please try again.", variant: "destructive", });
+    } finally { 
+      setIsLoading(false); 
     }
   };
-  
-  useEffect(() => {
-    // Scroll to top when step changes or recommendation appears
-    window.scrollTo(0, 0);
-  }, [currentStep, recommendation]);
 
+  useEffect(() => { window.scrollTo(0, 0); }, [currentStep, recommendation]);
 
-  const progressValue = ((currentStep + 1) / questions.length) * 100;
+  if (!isLoaded) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+        <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
+        <p className="text-xl text-muted-foreground">Loading questionnaire...</p>
+      </div>
+    );
+  }
 
-  if (isLoading) {
+  if (isLoading && !recommendation) { 
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
@@ -145,83 +228,84 @@ export function QuestionnaireForm() {
   }
 
   if (recommendation) {
-    const recommendedServiceDetails = services.find(s => s.name === recommendation.serviceName);
+    const videoIdForCongratsPage = "m9mpjtevml";
     return (
-      <Card className="w-full max-w-2xl mx-auto shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-3xl text-center text-primary">Your Recommended Service</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {recommendedServiceDetails ? (
-            <div>
-              <h3 className="text-2xl font-semibold mb-2">{recommendedServiceDetails.name}</h3>
-              <p className="text-sm text-muted-foreground mb-1">{recommendedServiceDetails.tagline}</p>
-              <p className="mb-4">{recommendedServiceDetails.description}</p>
-              <p className="text-2xl font-bold text-primary mb-4">${recommendedServiceDetails.price}</p>
-              <h4 className="font-semibold mb-1">Key Features:</h4>
-              <ul className="list-disc list-inside text-muted-foreground space-y-1 mb-4">
-                {recommendedServiceDetails.features.map((feature, idx) => (
-                  <li key={idx}>{feature}</li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-             <p className="text-xl font-semibold">{recommendation.serviceName}</p>
-          )}
-          <div>
-            <h4 className="font-semibold mb-1">Justification:</h4>
-            <p className="text-muted-foreground bg-accent/50 p-3 rounded-md">{recommendation.justification}</p>
+      <div className="relative w-full flex flex-col items-center justify-center min-h-[calc(100vh-var(--header-height,80px))] py-8 md:py-12 px-4">
+        {showConfetti && confettiData && (
+          <div className="absolute inset-0 z-[100] pointer-events-none flex justify-center items-center overflow-hidden">
+            <Lottie 
+              animationData={confettiData} 
+              loop={false} 
+              onComplete={() => setShowConfetti(false)} 
+              style={{ width: '100%', height: '100%'}}
+            />
           </div>
-          <div className="flex justify-center mt-8 space-x-4">
-            <Button variant="outline" onClick={() => { setRecommendation(null); setCurrentStep(questions.length - 1); }} className="shadow-sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />  Back to Questions
-            </Button>
-            <Button onClick={() => router.push(`/checkout/${recommendedServiceDetails?.id || 'unknown'}`)} className="shadow-md">
-              Proceed to Purchase <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+        )}
+        <div className="text-center max-w-xl md:max-w-2xl w-full">
+          <motion.h1 
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-800 mb-6 tracking-tight"
+            initial={{opacity: 0, y: -20}} animate={{opacity:1, y:0}} transition={{duration:0.5, delay: 0.2}}
+          >
+            Well Done. A Quick Word From Marshall.
+          </motion.h1>
+          <div className="w-full max-w-xl mx-auto aspect-video rounded-lg shadow-2xl overflow-hidden mb-8">
+            <WistiaPlayer videoId={videoIdForCongratsPage} autoPlay={true} muted={true} /> 
           </div>
-        </CardContent>
-      </Card>
+          <motion.div
+            variants={contentAppearVariants}
+            initial="hidden"
+            animate={showTextAndCTA ? "visible" : "hidden"}
+            className="space-y-4 mt-8"
+          >
+            <p className="text-md text-neutral-600 mb-2 max-w-lg mx-auto">
+              You&apos;ve laid the groundwork for significant clarity.
+            </p>
+            <p className="text-lg text-neutral-700 mb-8 max-w-lg mx-auto leading-relaxed">
+              As Marshall mentioned, the next step is simple. Choose the advisory tier below that best matches the speed and depth of insight you require right now.
+            </p>
+            <Button 
+              size="lg"
+              onClick={() => router.push('/services')} 
+              className="bg-[#0370e3] hover:bg-blue-700 text-white shadow-lg hover:shadow-xl rounded-full px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base font-semibold transition-all duration-150 ease-out transform hover:scale-[1.03]"
+            >
+              Explore Advisory Tiers <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </motion.div>
+        </div>
+      </div>
     );
   }
   
-
-  const currentQuestion = questions[currentStep];
-
   return (
-    <div className="flex flex-col items-center w-full space-y-8">
-      <Progress value={progressValue} className="w-full max-w-2xl h-2" />
-      <QuestionCard
+    <div className="relative flex flex-col items-center w-full space-y-0 py-8 md:py-12"> 
+      <div className="absolute inset-0 flex justify-center items-center pointer-events-none -z-10">
+        {/* Animated Background Blob */}
+        <motion.div
+          className="w-80 h-80 bg-[#B284BE] rounded-full filter blur-3xl"
+          initial={{ opacity: 0.2, scale: 0.95 }} // Start slightly smaller and more transparent
+          animate={{ scale: [1, 1.03, 1], opacity: [0.3, 0.35, 0.3] }} // Pulse scale and opacity
+          transition={{ 
+            duration: 10, 
+            repeat: Infinity, 
+            ease: "easeInOut", 
+            repeatType: "mirror" // Makes the animation reverse smoothly
+          }}
+        />
+      </div>
+      <ClientOnlyQuestionCard
         question={currentQuestion}
-        value={answers[currentQuestion.id]}
+        value={currentAnswer}
         onChange={(value) => handleAnswerChange(currentQuestion.id, value)}
         stepNumber={currentStep + 1}
         totalSteps={questions.length}
+        minCharLength={MIN_CHARS_PER_QUESTION}
+        maxCharLength={MAX_CHARS_PER_QUESTION}
+        onNext={handleNextStep}
+        onSubmit={handleSubmitAnswers}
+        isLastQuestion={isLastQuestion}
+        isSubmitting={isLoading} 
+        isMinCharMet={isMinCharMet}
       />
-      <div className="flex justify-between w-full max-w-2xl pt-4">
-        <Button
-          onClick={prevStep}
-          disabled={currentStep === 0 || isLoading}
-          variant="outline"
-          className="shadow-sm"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-        </Button>
-        {currentStep < questions.length - 1 ? (
-          <Button onClick={nextStep} disabled={isLoading} className="shadow-sm">
-            Next <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        ) : (
-          <Button onClick={handleSubmit} disabled={isLoading} className="shadow-md">
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="mr-2 h-4 w-4" />
-            )}
-            Get My Recommendation
-          </Button>
-        )}
-      </div>
     </div>
   );
 }

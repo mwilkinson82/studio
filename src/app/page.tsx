@@ -21,7 +21,7 @@ export default function HomePage() {
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <AppLogo className="h-8 w-8 text-primary" />
             <span className="font-bold sm:inline-block text-xl">
-              ClarityFlow
+              A|P Advisory Platform
             </span>
           </Link>
           <nav className="flex flex-1 items-center space-x-4">
@@ -48,7 +48,7 @@ export default function HomePage() {
                     Unlock Expert Insight. Achieve Total Clarity.
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    ClarityFlow provides tailored advisory services to help you navigate challenges, refine strategies, and achieve your goals with confidence.
+                    A|P Advisory Platform provides tailored advisory services to help you navigate challenges, refine strategies, and achieve your goals with confidence.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -113,7 +113,7 @@ export default function HomePage() {
       </main>
 
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} ClarityFlow. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} A|P Advisory Platform. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link href="#" className="text-xs hover:underline underline-offset-4 text-muted-foreground">
             Terms of Service

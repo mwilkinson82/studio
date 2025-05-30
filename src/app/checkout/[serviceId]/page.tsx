@@ -1,13 +1,12 @@
-"use client";
+'use client';
 
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { services } from "@/config/services";
-import { ArrowLeft, CheckCircle, CreditCard } from "lucide-react";
+import { ArrowLeft, CheckCircle, CreditCard } from "lucide-react"; // Removed ShieldCheck as it's not used
 import Image from "next/image";
-import Link from "next/link";
-import { AppLogo } from "@/components/core/AppLogo";
+import { cn } from "@/lib/utils";
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -17,80 +16,106 @@ export default function CheckoutPage() {
 
   if (!service) {
     return (
-      <div className="container mx-auto py-12 px-4 md:px-6 text-center">
-        <h1 className="text-2xl font-semibold mb-4">Service not found</h1>
-        <Button onClick={() => router.push("/")}>Go to Homepage</Button>
+      <div className={cn(
+        "container mx-auto py-12 px-4 md:px-6 text-center flex flex-col items-center justify-center min-h-[calc(100vh-150px)] overflow-x-hidden",
+        "max-w-full xs:max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-3xl"
+      )}>
+        <h1 className="text-2xl font-semibold mb-4">Service Not Found</h1>
+        <p className="text-muted-foreground mb-6">The service you are looking for could not be found.</p>
+        <Button onClick={() => router.push("/services")}>Back to Services</Button>
       </div>
     );
   }
 
+  const handleCompletePurchase = () => {
+    if (service.stripePaymentLink) {
+      window.location.href = service.stripePaymentLink;
+    } else {
+      alert("Payment link not available for this service yet.");
+    }
+  };
+
   return (
-    <>
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 max-w-screen-2xl items-center">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <AppLogo className="h-8 w-8 text-primary" />
-            <span className="font-bold sm:inline-block text-xl">
-              ClarityFlow
-            </span>
-          </Link>
-        </div>
-      </header>
-    <div className="container mx-auto py-12 px-4 md:px-6 max-w-3xl">
-      <Card className="shadow-xl">
-        <CardHeader className="text-center">
-          <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
-          <CardTitle className="text-3xl">Confirm Your Purchase</CardTitle>
-          <CardDescription>You're about to purchase the "{service.name}" service.</CardDescription>
+    <div className={cn(
+      "container mx-auto py-8 md:py-12 px-4 md:px-6 overflow-x-hidden",
+      "max-w-full xs:max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-3xl"
+    )}>
+      <div className="text-center mb-8 md:mb-12">
+        <h1 className="text-3xl md:text-4xl font-bold text-neutral-800 tracking-tight">Confirm Your Selection</h1>
+        <p className="text-lg text-neutral-600 mt-2">You are about to proceed with the following advisory service.</p>
+      </div>
+
+      <Card className="w-full shadow-xl">
+        <CardHeader className="border-b pb-4">
+          <CardTitle className="text-2xl md:text-3xl font-semibold text-primary">
+            {service.name}
+          </CardTitle>
+          {service.tagline && (
+            <CardDescription className="text-sm text-neutral-500 pt-1">
+              {service.tagline}
+            </CardDescription>
+          )}
         </CardHeader>
-        <CardContent className="space-y-8">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+        <CardContent className="p-6 space-y-6">
+          <div>
+            <h3 className="text-lg font-medium text-neutral-700 mb-3">Description:</h3>
+            <p className="text-sm text-neutral-600 leading-relaxed">{service.description}</p>
+          </div>
+
+          {service.features && service.features.length > 0 && (
             <div>
-              <Image 
-                src={`https://placehold.co/600x400.png?text=${encodeURIComponent(service.name)}`}
-                alt={service.name}
-                data-ai-hint="service product"
-                width={600}
-                height={400}
-                className="rounded-lg shadow-md aspect-video object-cover"
-              />
-            </div>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-semibold">{service.name}</h2>
-              <p className="text-sm text-muted-foreground">{service.tagline}</p>
-              <p className="text-3xl font-bold text-primary">${service.price.toLocaleString()}</p>
-              <p className="text-muted-foreground">{service.description}</p>
-              <ul className="space-y-1 text-sm">
+              <h3 className="text-lg font-medium text-neutral-700 mb-3">Key Features:</h3>
+              <ul className="space-y-2">
                 {service.features.map((feature, index) => (
-                  <li key={index} className="flex items-center">
-                    <CheckCircle className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
-                    {feature}
+                  <li key={index} className="flex items-start text-sm">
+                    <CheckCircle className="h-5 w-5 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-neutral-700">{feature}</span>
                   </li>
                 ))}
               </ul>
             </div>
+          )}
+
+          <div className="border-t pt-6 text-center">
+            <p className="text-3xl md:text-4xl font-bold text-neutral-800">
+              Total: ${service.price}
+            </p>
           </div>
-          
+
           <div className="border-t pt-6">
-            <h3 className="text-xl font-semibold mb-4">Payment Details (Placeholder)</h3>
-            <div className="space-y-4">
-                <p className="text-muted-foreground">
-                    This is a placeholder checkout page. In a real application, you would integrate a payment gateway here.
+            <div className="flex justify-center mb-6">
+                <Image 
+                    src="/alp + stripe.png" 
+                    alt="a|p securely powered by Stripe" 
+                    width={300} 
+                    height={75}
+                    layout="intrinsic"
+                    className="rounded-md"
+                />
+            </div>
+            <h3 className="text-xl font-semibold mb-4 text-neutral-700 text-center">Secure Payment</h3>
+            <div className="space-y-4 bg-neutral-50 p-6 rounded-lg shadow-sm">
+                <p className="text-muted-foreground text-sm text-center">
+                  a|p partners with Stripe for your payment security.
                 </p>
-                <Button size="lg" className="w-full shadow-md" onClick={() => alert(`Simulating purchase of ${service.name} for $${service.price}`)}>
-                    <CreditCard className="mr-2 h-5 w-5" /> Complete Purchase
+                <Button 
+                  size="lg" 
+                  className="w-full bg-[#0370e3] hover:bg-blue-700 text-white shadow-md text-base font-semibold py-3 rounded-full"
+                  onClick={handleCompletePurchase}
+                >
+                    <CreditCard className="mr-2 h-5 w-5" /> Proceed to Secure Payment
                 </Button>
             </div>
           </div>
-
+          
           <div className="mt-8 text-center">
-            <Button variant="outline" onClick={() => router.back()} className="shadow-sm">
+            <Button variant="outline" onClick={() => router.back()} className="shadow-sm text-neutral-600 hover:text-neutral-800">
               <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
             </Button>
           </div>
         </CardContent>
       </Card>
+      {/* Removed temporary scroll div */}
     </div>
-    </>
   );
 }

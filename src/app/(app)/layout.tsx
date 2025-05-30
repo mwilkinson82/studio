@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { AppShell } from "@/components/core/AppShell";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  // This console log is the ONLY thing besides returning children.
+  console.log(">>> FORCED MINIMAL src/app/(app)/layout.tsx ACTIVE <<<");
+  return <>{children}</>;
 }

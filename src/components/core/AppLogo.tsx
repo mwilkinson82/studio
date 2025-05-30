@@ -4,18 +4,22 @@ export function AppLogo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
-      fill="none"
+      viewBox="0 0 100 100" // Adjusted viewBox for potentially wider text
+      fill="currentColor" // Changed fill to currentColor for text
       aria-hidden="true"
       {...props}
     >
-      <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="5" />
-      <path
-        d="M35 50 Q50 35, 65 50 M35 65 Q50 50, 65 65"
-        stroke="currentColor"
-        strokeWidth="5"
-        strokeLinecap="round"
-      />
+      {/* Simple text representation of a|p - styling might need adjustment */}
+      <text 
+        x="50" 
+        y="60" // Adjusted y for better vertical centering of text
+        fontSize="40" // Adjust font size as needed
+        textAnchor="middle" 
+        fontFamily="Arial, sans-serif" // Specify a common font family
+        fontWeight="bold" // Make it bold to match typical logo weight
+      >
+        a|p
+      </text>
     </svg>
   );
 }

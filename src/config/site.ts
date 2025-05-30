@@ -1,8 +1,8 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "ClarityFlow",
-  description: "Expert Advisory Consulting to bring clarity to your challenges.",
+  name: "a|p",
+  description: "Expert Advisory Consulting Services for the A|P Advisory Platform.",
   navItems: [
     {
       label: "Home",

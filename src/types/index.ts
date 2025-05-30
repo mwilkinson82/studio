@@ -5,6 +5,12 @@ export interface Service {
   description: string;
   price: number;
   features: string[];
+  stripePaymentLink?: string; 
+  isMostPopular?: boolean; 
+  isElite?: boolean;
+  actionText?: string;
+  featureStyle?: "standard" | "premium";
+  isComingSoon?: boolean;
 }
 
 export interface QuestionnaireAnswers {
@@ -23,6 +29,8 @@ export interface QuestionDefinition {
   prompt: string;
   placeholder: string;
   supportingText?: string;
+  wistiaVideoId?: string;
+  tipText?: string; // Added tipText
 }
 
 export interface Message {
@@ -32,7 +40,7 @@ export interface Message {
   timestamp: Date;
   isDocument?: boolean;
   documentName?: string;
-  documentUrl?: string; // Placeholder for download link
+  documentUrl?: string; 
 }
 
 export interface Purchase {

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import { useState, useEffect, FormEvent } from "react";
 import type { Message } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,7 +18,7 @@ const mockMessages: Message[] = [
   {
     id: "1",
     sender: "advisor",
-    content: "Welcome to ClarityFlow! We're excited to help you.",
+    content: "Welcome to A|P Advisory Platform! We're excited to help you.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
   },
   {

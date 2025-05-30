@@ -1,49 +1,55 @@
-import type { ReactNode } from "react";
-import Link from "next/link";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { AppLogo } from "@/components/core/AppLogo";
-import { MainNav } from "@/components/core/MainNav";
-import { siteConfig } from "@/config/site";
+'use client';
 
-interface AppShellProps {
-  children: ReactNode;
-}
+import React, { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link'; // Using Next.js Link for navigation in the non-hub sidebar
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter(); // For programmatic navigation if needed
+  const isHubPage = pathname === '/hub' || pathname.startsWith('/hub'); // Adjust if your hub path is different
+
+  // State for the non-hub sidebar (if you have other pages that need a shell)
+  const [otherPagesSidebarOpen, setOtherPagesSidebarOpen] = useState(true);
+
+  console.log("NEW AppShell rendering. Pathname:", pathname, "IsHubPage:", isHubPage);
+
+  if (isHubPage) {
+    // For the hub page, render only its content to allow it to be full screen
+    console.log("NEW AppShell: Rendering Hub Page (children only)");
+    return <>{children}</>;
+  }
+
+  // For other pages, render a standard layout with a simple sidebar and header
+  console.log("NEW AppShell: Rendering standard layout for non-hub page");
   return (
-    <div className="flex min-h-screen w-full">
-      <Sidebar collapsible="icon" variant="sidebar" side="left" className="border-r">
-        <SidebarHeader className="p-4 border-b">
-          <div className="flex items-center gap-2">
-             <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
-                <AppLogo className="h-8 w-8 text-primary" />
-                <span className="group-data-[collapsible=icon]:hidden">{siteConfig.name}</span>
-             </Link>
-          </div>
-        </SidebarHeader>
-        <SidebarContent className="p-2">
-          <MainNav />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset className="flex flex-col">
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6 lg:h-[60px]">
-          <SidebarTrigger className="md:hidden" />
-          <div className="flex-1">
-            {/* Placeholder for breadcrumbs or page title if needed */}
-          </div>
-          {/* Placeholder for user dropdown or actions */}
-        </header>
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Header for non-hub pages */}
+      <header style={{ backgroundColor: '#f0f0f0', padding: '1rem', borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between' }}>
+        <h1 style={{ margin: 0 }}>Standard Page Header</h1>
+        <button onClick={() => setOtherPagesSidebarOpen(!otherPagesSidebarOpen)}>
+          Toggle Sidebar
+        </button>
+      </header>
+      <div style={{ display: 'flex', flex: 1 }}>
+        {/* Sidebar for non-hub pages */}
+        {otherPagesSidebarOpen && (
+          <aside style={{ width: '200px', backgroundColor: '#e0e0e0', padding: '1rem', borderRight: '1px solid #ccc' }}>
+            <h2 style={{marginTop: 0}}>Navigation</h2>
+            <nav>
+              <ul>
+                <li><Link href="/hub">Hub</Link></li>
+                {/* Add other links for non-hub pages here */}
+                <li><Link href="/some-other-page">Other Page</Link></li>
+              </ul>
+            </nav>
+          </aside>
+        )}
+        {/* Main content for non-hub pages */}
+        <main style={{ flex: 1, padding: '1rem' }}>
           {children}
         </main>
-      </SidebarInset>
+      </div>
     </div>
   );
 }
