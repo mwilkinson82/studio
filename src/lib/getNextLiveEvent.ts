@@ -1,6 +1,6 @@
 
 // src/lib/getNextLiveEvent.ts
-import { utcToZonedTime, format } from 'date-fns-tz';
+import * as dateFnsTz from 'date-fns-tz';
 import { setHours, setMinutes, setSeconds, setMilliseconds, addDays, getDay } from 'date-fns';
 
 export interface LiveEventSchedule {
@@ -29,7 +29,7 @@ export function getNextLiveEvent(): EventInfo {
   let closestUpcomingEvent: { name: string; startUTC: Date; endUTC: Date; } | null = null;
 
   for (const eventRule of liveEventsSchedule) {
-    const nowInEventTz = utcToZonedTime(nowUTC, eventRule.timezone);
+    const nowInEventTz = dateFnsTz.utcToZonedTime(nowUTC, eventRule.timezone);
 
     for (let i = 0; i < 7; i++) { // Check today and up to 6 days ahead
       const prospectiveDateInEventTz = addDays(nowInEventTz, i);
@@ -44,8 +44,8 @@ export function getNextLiveEvent(): EventInfo {
           eventEndInEventTz = addDays(eventEndInEventTz, 7);
         }
         
-        const eventStartUTC = zonedTimeToUtc(eventStartInEventTz, eventRule.timezone);
-        const eventEndUTC = zonedTimeToUtc(eventEndInEventTz, eventRule.timezone);
+        const eventStartUTC = dateFnsTz.zonedTimeToUtc(eventStartInEventTz, eventRule.timezone);
+        const eventEndUTC = dateFnsTz.zonedTimeToUtc(eventEndInEventTz, eventRule.timezone);
 
         // Check if event is currently live
         if (nowUTC >= eventStartUTC && nowUTC < eventEndUTC) {
@@ -53,7 +53,7 @@ export function getNextLiveEvent(): EventInfo {
             status: 'live', 
             name: eventRule.name, 
             endsAt: eventEndUTC,
-            endsAtFormatted: format(eventEndInEventTz, 'h:mm aa zzz', { timeZone: eventRule.timezone })
+            endsAtFormatted: dateFnsTz.format(eventEndInEventTz, 'h:mm aa zzz', { timeZone: eventRule.timezone })
           };
         }
 
@@ -75,12 +75,12 @@ export function getNextLiveEvent(): EventInfo {
 
   if (closestUpcomingEvent) {
     const targetTimezone = liveEventsSchedule.find(e => e.name === closestUpcomingEvent!.name)!.timezone;
-    const startsAtInEventTz = utcToZonedTime(closestUpcomingEvent.startUTC, targetTimezone);
+    const startsAtInEventTz = dateFnsTz.utcToZonedTime(closestUpcomingEvent.startUTC, targetTimezone);
     return { 
       status: 'upcoming', 
       name: closestUpcomingEvent.name, 
       startsAt: closestUpcomingEvent.startUTC,
-      startsAtFormatted: format(startsAtInEventTz, 'h:mm aa zzz', { timeZone: targetTimezone })
+      startsAtFormatted: dateFnsTz.format(startsAtInEventTz, 'h:mm aa zzz', { timeZone: targetTimezone })
     };
   }
 

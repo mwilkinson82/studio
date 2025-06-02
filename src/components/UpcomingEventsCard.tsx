@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { getNextLiveEvent, type EventInfo } from '@/lib/getNextLiveEvent';
-import { format } from 'date-fns-tz'; 
+import * as dateFnsTz from 'date-fns-tz'; 
 
 export function UpcomingEventsCard() {
   const [info, setInfo] = useState<EventInfo>(null);
@@ -14,7 +14,7 @@ export function UpcomingEventsCard() {
     const updateEventInfo = () => {
       const next = getNextLiveEvent();
       setInfo(next);
-      setCurrentTimeEST(format(new Date(), 'h:mm aa zzz', { timeZone: 'America/New_York' }));
+      setCurrentTimeEST(dateFnsTz.format(new Date(), 'h:mm aa zzz', { timeZone: 'America/New_York' }));
     };
     
     updateEventInfo();
