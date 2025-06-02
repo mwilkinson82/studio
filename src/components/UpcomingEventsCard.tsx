@@ -1,9 +1,10 @@
+
 // src/components/UpcomingEventsCard.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { getNextLiveEvent, type EventInfo } from '@/lib/getNextLiveEvent';
-import { formatInTimeZone } from 'date-fns-tz'; // Still useful for current time display
+import { formatInTimeZone } from 'date-fns-tz'; 
 
 export function UpcomingEventsCard() {
   const [info, setInfo] = useState<EventInfo>(null);
@@ -13,7 +14,8 @@ export function UpcomingEventsCard() {
     const updateEventInfo = () => {
       const next = getNextLiveEvent();
       setInfo(next);
-      setCurrentTimeEST(formatInTimeZone(new Date(), 'America/New_York', 'h:mm aa zzz'));
+      // Corrected usage of formatInTimeZone
+      setCurrentTimeEST(formatInTimeZone(new Date(), 'h:mm aa zzz', { timeZone: 'America/New_York' }));
     };
     
     updateEventInfo();
@@ -42,7 +44,7 @@ export function UpcomingEventsCard() {
           <span className="text-xs text-red-500 font-semibold px-2 py-0.5 bg-red-100 rounded-full">LIVE NOW</span>
           <span className="text-gray-800 font-medium pt-1">{info.name}</span>
           <span className="text-gray-500 text-xs">
-            Ends at {info.endsAtFormatted} {/* USE FORMATTED STRING */}
+            Ends at {info.endsAtFormatted} 
           </span>
           <button 
             className="mt-2 w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors duration-200"
@@ -56,7 +58,7 @@ export function UpcomingEventsCard() {
           <span className="text-gray-600 text-sm">Next:</span>
           <span className="text-gray-800 font-medium">{info.name}</span>
           <span className="text-gray-500 text-xs">
-            Starts at {info.startsAtFormatted} {/* USE FORMATTED STRING */}
+            Starts at {info.startsAtFormatted} 
           </span>
         </div>
       )}
