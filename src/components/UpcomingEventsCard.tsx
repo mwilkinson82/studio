@@ -1,65 +1,48 @@
-
 // src/components/UpcomingEventsCard.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getNextLiveEvent, type EventInfo } from '@/lib/getNextLiveEvent';
-import * as dateFnsTz from 'date-fns-tz'; 
+import React, { useEffect, useState } from 'react';
+import { getNextLiveEvent, formatInEST, type NextEventResult } from '@/lib/getNextLiveEvent'; // Ensure NextEventResult is exported or define here
 
-export function UpcomingEventsCard() {
-  const [info, setInfo] = useState<EventInfo>(null);
-  const [currentTimeEST, setCurrentTimeEST] = useState<string>('');
+export default function UpcomingEventsCard() {
+  const [nextEvent, setNextEvent] = useState<NextEventResult | null>(null);
+  const [currentEST, setCurrentEST] = useState<string>('');
 
   useEffect(() => {
-    const updateEventInfo = () => {
-      const next = getNextLiveEvent();
-      setInfo(next);
-      setCurrentTimeEST(dateFnsTz.format(new Date(), 'h:mm aa zzz', { timeZone: 'America/New_York' }));
-    };
-    
-    updateEventInfo();
-    const intervalId = setInterval(updateEventInfo, 60000); 
+    // Compute “now in EST” as a formatted string (e.g., “02:03 AM EDT”):
+    const now = new Date();
+    const nowESTString = formatInEST(now, 'hh:mm a zzz');
+    setCurrentEST(nowESTString);
 
-    return () => clearInterval(intervalId);
-  }, []);
-
-  if (!info) {
-    return (
-      <div className="bg-white rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] p-6 w-64 h-48 flex flex-col justify-center items-center">
-        <h3 className="text-lg font-semibold mb-2 text-gray-700">Upcoming Intensives</h3>
-        <p className="text-gray-500 text-sm">Checking schedule...</p>
-        {currentTimeEST && <p className="text-xs text-gray-400 mt-2">EST: {currentTimeEST}</p>}
-      </div>
-    );
-  }
+    // Compute the next event
+    const evt = getNextLiveEvent();
+    setNextEvent(evt);
+  }, []); // Runs once on mount
 
   return (
-    <div className="bg-white rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] p-6 w-64">
-      <h3 className="text-lg font-semibold mb-1 text-gray-700">Upcoming Intensives</h3>
-      {currentTimeEST && <p className="text-xs text-gray-400 mb-4">EST: {currentTimeEST}</p>}
+    <div className="w-full max-w-xs bg-white rounded-lg shadow-soft p-5 space-y-3"> {/* Changed to rounded-lg and p-5 */}
+      <h3 className="text-lg font-semibold text-gray-700">Upcoming Intensives</h3> {/* Added text-gray-700 */}
 
-      {info.status === 'live' ? (
-        <div className="flex flex-col items-start space-y-2">
-          <span className="text-xs text-red-500 font-semibold px-2 py-0.5 bg-red-100 rounded-full">LIVE NOW</span>
-          <span className="text-gray-800 font-medium pt-1">{info.name}</span>
-          <span className="text-gray-500 text-xs">
-            Ends at {info.endsAtFormatted} 
-          </span>
-          <button 
-            className="mt-2 w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors duration-200"
-            onClick={() => console.log('Join Now clicked for', info.name)}
+      {nextEvent === null ? (
+        <>
+          <p className="text-gray-500 text-sm">No upcoming events found for this week.</p>
+          {currentEST && <p className="text-gray-400 text-xs">Current EST: {currentEST}</p>}
+        </>
+      ) : (
+        <>
+          <p className="text-base font-medium text-gray-800">{nextEvent.name}</p> {/* Added text-gray-800 */}
+          <p className="text-gray-600 text-sm">
+            {formatInEST(nextEvent.start, 'EEEE, MMM d, hh:mm a zzz')}
+            {' – '}
+            {formatInEST(nextEvent.end, 'hh:mm a zzz')}
+          </p>
+          <a
+            href="#"
+            className="inline-block mt-2 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-green-600 transition" // Adjusted colors
           >
             Join Now
-          </button>
-        </div>
-      ) : ( // Upcoming
-        <div className="flex flex-col items-start space-y-2">
-          <span className="text-gray-600 text-sm">Next:</span>
-          <span className="text-gray-800 font-medium">{info.name}</span>
-          <span className="text-gray-500 text-xs">
-            Starts at {info.startsAtFormatted} 
-          </span>
-        </div>
+          </a>
+        </>
       )}
     </div>
   );

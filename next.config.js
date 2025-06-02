@@ -27,15 +27,16 @@ const nextConfig = {
   },
   reactStrictMode: true,
   allowedDevOrigins: [
-    'http://localhost:3001',  // New dev port
-    'http://localhost:3000',  // Common default, good to keep if sometimes used
-    // Firebase Studio preview URLs
+    'http://localhost:3001',  // Default local dev port from package.json
+    'http://localhost:3000',
+    // Firebase Studio preview URLs - ensure the one that works is listed
+    'https://6000-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
+    'http://6000-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
+    // Keep others just in case configuration changes or for different access methods
     'https://9000-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
     'http://9000-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
-    // If Studio preview URL might also use port 3001 directly
     'https://3001-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
     'http://3001-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
-    // Keep the wildcard from previous config just in case, though you noted exact strings are preferred
     'https://*-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
   ],
 };
