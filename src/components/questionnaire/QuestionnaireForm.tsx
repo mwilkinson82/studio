@@ -1,3 +1,4 @@
+// src/components/questionnaire/QuestionnaireForm.tsx
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -10,8 +11,8 @@ import type { ServiceRecommendationOutput } from "@/ai/flows/service-recommendat
 import { Loader2, ArrowRight } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
 import Lottie from "lottie-react";
-import { WistiaPlayer } from "@/components/common/WistiaPlayer";
-import { motion } from "framer-motion"; // motion is already imported
+import { WistiaPlayer } from "@/components/common/WistiaPlayer"; // Keep this import, though WistiaPlayer itself has issues
+import { motion } from "framer-motion";
 
 const MIN_CHARS_PER_QUESTION = 20;
 const MAX_CHARS_PER_QUESTION = 1000;
@@ -33,7 +34,7 @@ const questions: QuestionDefinition[] = [
     prompt: "What’s the situation around this issue?",
     placeholder: "e.g., We're a startup in the SaaS space, launched 6 months ago, facing slow user adoption.",
     tipText: "Consider relevant background, recent changes, or contributing factors.",
-    wistiaVideoId: "5qgx9ki87v",
+    wistiaVideoId: "enkg52axky", // CORRECTED
   },
   {
     id: "issueOrigin",
@@ -41,7 +42,7 @@ const questions: QuestionDefinition[] = [
     prompt: "What do you think is really causing this issue?",
     placeholder: "e.g., Perhaps our value proposition isn't clear, or we're targeting the wrong channels.",
     tipText: "Think about underlying causes, not just symptoms. What’s your hypothesis?",
-    wistiaVideoId: "5qgx9ki87v",
+    wistiaVideoId: "5qgx9ki87v", 
   },
   {
     id: "triedSolutions",
@@ -73,10 +74,11 @@ const questions: QuestionDefinition[] = [
     prompt: "Is there anything else you feel is important?",
     placeholder: "e.g., We have a limited budget for the next 3 months, or specific competitor actions.",
     tipText: "Include any constraints, opportunities, or other details that might be relevant.",
-    wistiaVideoId: "3inbf3ppgf",
+    wistiaVideoId: "druloh0qqh", // CORRECTED based on your list
   },
 ];
 
+// ... rest of the QuestionnaireForm.tsx component ...
 const initialAnswers: QuestionnaireAnswers = questions.reduce((acc, q) => ({ ...acc, [q.id]: "" }), {} as QuestionnaireAnswers);
 
 const contentAppearVariants = {
@@ -277,21 +279,7 @@ export function QuestionnaireForm() {
   }
   
   return (
-    <div className="relative flex flex-col items-center w-full space-y-0 py-8 md:py-12"> 
-      <div className="absolute inset-0 flex justify-center items-center pointer-events-none -z-10">
-        {/* Animated Background Blob */}
-        <motion.div
-          className="w-80 h-80 bg-[#B284BE] rounded-full filter blur-3xl"
-          initial={{ opacity: 0.2, scale: 0.95 }} // Start slightly smaller and more transparent
-          animate={{ scale: [1, 1.03, 1], opacity: [0.3, 0.35, 0.3] }} // Pulse scale and opacity
-          transition={{ 
-            duration: 10, 
-            repeat: Infinity, 
-            ease: "easeInOut", 
-            repeatType: "mirror" // Makes the animation reverse smoothly
-          }}
-        />
-      </div>
+    <div className="flex flex-col items-center w-full py-6 md:py-10"> 
       <ClientOnlyQuestionCard
         question={currentQuestion}
         value={currentAnswer}

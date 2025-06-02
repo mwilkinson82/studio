@@ -1,54 +1,93 @@
+// src/components/core/AppShell.tsx
 'use client';
 
 import React, { useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link'; // Using Next.js Link for navigation in the non-hub sidebar
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faHouse,
+  faUser,
+  faReceipt,
+  // faFolder, // Not used in this specific AppShell snippet
+  // faComment, // Not used
+  // faCalendar, // Not used
+  // faGear, // Not used
+  // faRightFromBracket, // Not used
+  // faBell, // Not used
+  // faArrowRight, // Not used
+} from '@fortawesome/free-solid-svg-icons';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  children: React.ReactNode;
+}
+
+export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const router = useRouter(); // For programmatic navigation if needed
-  const isHubPage = pathname === '/hub' || pathname.startsWith('/hub'); // Adjust if your hub path is different
+  const isHubRoute =
+    pathname === '/hub' || pathname.startsWith('/hub/');
 
-  // State for the non-hub sidebar (if you have other pages that need a shell)
-  const [otherPagesSidebarOpen, setOtherPagesSidebarOpen] = useState(true);
-
-  console.log("NEW AppShell rendering. Pathname:", pathname, "IsHubPage:", isHubPage);
-
-  if (isHubPage) {
-    // For the hub page, render only its content to allow it to be full screen
-    console.log("NEW AppShell: Rendering Hub Page (children only)");
+  if (isHubRoute) {
     return <>{children}</>;
   }
 
-  // For other pages, render a standard layout with a simple sidebar and header
-  console.log("NEW AppShell: Rendering standard layout for non-hub page");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header for non-hub pages */}
-      <header style={{ backgroundColor: '#f0f0f0', padding: '1rem', borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between' }}>
-        <h1 style={{ margin: 0 }}>Standard Page Header</h1>
-        <button onClick={() => setOtherPagesSidebarOpen(!otherPagesSidebarOpen)}>
+    <div className="min-h-screen flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+        <h1 className="text-2xl font-semibold">Standard Page Header</h1>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="text-gray-500 hover:text-blue transition-colors duration-300"
+        >
           Toggle Sidebar
         </button>
       </header>
-      <div style={{ display: 'flex', flex: 1 }}>
-        {/* Sidebar for non-hub pages */}
-        {otherPagesSidebarOpen && (
-          <aside style={{ width: '200px', backgroundColor: '#e0e0e0', padding: '1rem', borderRight: '1px solid #ccc' }}>
-            <h2 style={{marginTop: 0}}>Navigation</h2>
+
+      <div className="flex flex-1">
+        {sidebarOpen && (
+          <aside className="w-60 bg-white border-r border-gray-100 p-6 space-y-6">
             <nav>
-              <ul>
-                <li><Link href="/hub">Hub</Link></li>
-                {/* Add other links for non-hub pages here */}
-                <li><Link href="/some-other-page">Other Page</Link></li>
+              <ul className="space-y-4">
+                <li>
+                  <Link href="/hub" passHref legacyBehavior>
+                    <a className="flex items-center text-gray-700 hover:text-blue transition-colors duration-300">
+                      <FontAwesomeIcon
+                        icon={faHouse}
+                        className="mr-3 w-5 text-center"
+                      />
+                      Hub
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/profile" passHref legacyBehavior>
+                    <a className="flex items-center text-gray-700 hover:text-blue transition-colors duration-300">
+                      <FontAwesomeIcon
+                        icon={faUser}
+                        className="mr-3 w-5 text-center"
+                      />
+                      Profile
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/history" passHref legacyBehavior>
+                    <a className="flex items-center text-gray-700 hover:text-blue transition-colors duration-300">
+                      <FontAwesomeIcon
+                        icon={faReceipt}
+                        className="mr-3 w-5 text-center"
+                      />
+                      Purchase History
+                    </a>
+                  </Link>
+                </li>
               </ul>
             </nav>
           </aside>
         )}
-        {/* Main content for non-hub pages */}
-        <main style={{ flex: 1, padding: '1rem' }}>
-          {children}
-        </main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );

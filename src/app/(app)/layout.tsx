@@ -1,7 +1,18 @@
-import type { ReactNode } from "react";
+// File: src/app/(app)/layout.tsx
+'use client'; // ensures this layout is treated as a client component
 
-export default function AppLayout({ children }: { children: ReactNode }) {
-  // This console log is the ONLY thing besides returning children.
-  console.log(">>> FORCED MINIMAL src/app/(app)/layout.tsx ACTIVE <<<");
-  return <>{children}</>;
+import React from 'react';
+import ClientOnlyAppShell from '@/components/core/ClientOnlyAppShell';
+
+export default function AppGroupLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    // We only return the AppShell wrapper. DO NOT output <html> or <body> here.
+    <ClientOnlyAppShell>
+      {children}
+    </ClientOnlyAppShell>
+  );
 }

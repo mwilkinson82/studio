@@ -1,24 +1,26 @@
+// src/components/core/ClientOnlyAppShell.tsx
 'use client';
 
-import * as React from 'react';
+import React from 'react';
+import CustomLoader from '@/components/core/CustomLoader';
 import { AppShell } from '@/components/core/AppShell';
-import CustomLoader from '@/components/core/CustomLoader'; // Ensure CustomLoader is imported
 
-interface ClientOnlyAppShellProps extends React.PropsWithChildren {}
+interface ClientOnlyAppShellProps {
+  children: React.ReactNode;
+}
 
-export default function ClientOnlyAppShell(props: ClientOnlyAppShellProps) {
+export default function ClientOnlyAppShell({
+  children,
+}: ClientOnlyAppShellProps) {
   const [hasMounted, setHasMounted] = React.useState(false);
 
   React.useEffect(() => {
-    console.log("ClientOnlyAppShell: useEffect, setting hasMounted = true");
     setHasMounted(true);
   }, []);
 
   if (!hasMounted) {
-    console.log("ClientOnlyAppShell: Not mounted, rendering CustomLoader as placeholder.");
     return <CustomLoader />;
   }
 
-  console.log("ClientOnlyAppShell: Mounted, rendering AppShell.");
-  return <AppShell {...props} />;
+  return <AppShell>{children}</AppShell>;
 }

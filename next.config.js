@@ -1,15 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {
-    styledComponents: true, // Assuming you are using styled-components
+    styledComponents: true,
   },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        port: '', // Optional: defaults to standard port if empty
-        pathname: '/**', // Optional: defaults to all paths if empty or '/**'
+        port: '',
+        pathname: '/**',
       },
       {
         protocol: 'https',
@@ -20,18 +20,24 @@ const nextConfig = {
     ],
   },
   typescript: {
-    ignoreBuildErrors: true, // As you had before
+    ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true, // As you had before
+    ignoreDuringBuilds: true,
   },
-  devIndicators: {
-    allowedDevOrigins: [
-      // Using a wildcard for the port part of the subdomain
-      'https://*-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
-    ],
-  },
-  reactStrictMode: true, // Recommended for development to catch potential problems
+  reactStrictMode: true,
+  allowedDevOrigins: [
+    'http://localhost:3001',  // New dev port
+    'http://localhost:3000',  // Common default, good to keep if sometimes used
+    // Firebase Studio preview URLs
+    'https://9000-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
+    'http://9000-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
+    // If Studio preview URL might also use port 3001 directly
+    'https://3001-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
+    'http://3001-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
+    // Keep the wildcard from previous config just in case, though you noted exact strings are preferred
+    'https://*-firebase-studio-1748033890974.cluster-pb4ljhlmg5hqsxnzpc56r3prxw.cloudworkstations.dev',
+  ],
 };
 
 module.exports = nextConfig;
